@@ -4,82 +4,88 @@ using UnityEngine.SceneManagement;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 
-[ExecuteInEditMode]
-public class MultisceneLoader : MonoBehaviour {
+namespace GabrielNaves {
 
-    public List<SceneAsset> scenes;
-    public bool autoReload;
+    /// <summary>
+    /// Automatically opens specified scenes in additive mode, both in editor and in play mode.
+    /// </summary>
+    [ExecuteInEditMode]
+    public class MultisceneLoader : MonoBehaviour {
 
-    void Start() {
-        if (!Application.isPlaying)
-            ReloadScenes();
-        else
-            LoadScenesInPlayMode();
-    }
+        public List<SceneAsset> scenes;
+        public bool autoReload;
 
-    #region In-Editor Code
-    public void ReloadScenes() {
-        RemoveScenesNotInAnyList();
-        OpenAllScenes();
-    }
-
-    void RemoveScenesNotInAnyList() {
-        var loaders = FindAllMultisceneLoaders();
-        foreach (var scene in GetAllLoadedScenes()) {
-            if (ShouldRemoveScene(scene, loaders))
-                EditorSceneManager.CloseScene(scene, true);
+        void Start() {
+            if (!Application.isPlaying)
+                ReloadScenes();
+            else
+                LoadScenesInPlayMode();
         }
-    }
 
-    MultisceneLoader[] FindAllMultisceneLoaders() => FindObjectsOfType<MultisceneLoader>();
-
-    List<Scene> GetAllLoadedScenes() {
-        List<Scene> scenes = new List<Scene>();
-        for (int i = 0; i < SceneManager.sceneCount; ++i)
-            scenes.Add(SceneManager.GetSceneAt(i));
-        return scenes;
-    }
-
-    bool ShouldRemoveScene(Scene scene, MultisceneLoader[] loaders) {
-        foreach (var loader in loaders) {
-            if (IsLoaderInThisScene(loader, scene) || IsSceneInLoaderSceneAssetList(scene, loader))
-                return false;
+        #region In-Editor Code
+        public void ReloadScenes() {
+            RemoveScenesNotInAnyList();
+            OpenAllScenes();
         }
-        return true;
-    }
 
-    bool IsLoaderInThisScene(MultisceneLoader loader, Scene scene) => loader.gameObject.scene.path == scene.path;
-
-    bool IsSceneInLoaderSceneAssetList(Scene scene, MultisceneLoader loader) {
-        foreach (var sceneAsset in loader.scenes) {
-            if (AssetDatabase.GetAssetPath(sceneAsset) == scene.path)
-                return true;
+        void RemoveScenesNotInAnyList() {
+            var loaders = FindAllMultisceneLoaders();
+            foreach (var scene in GetAllLoadedScenes()) {
+                if (ShouldRemoveScene(scene, loaders))
+                    EditorSceneManager.CloseScene(scene, true);
+            }
         }
-        return false;
-    }
 
-    void OpenAllScenes() {
-        foreach (var scene in scenes) {
-            if (scene)
-                EditorSceneManager.OpenScene(AssetDatabase.GetAssetPath(scene), OpenSceneMode.Additive);
-        }
-    }
-    #endregion
+        MultisceneLoader[] FindAllMultisceneLoaders() => FindObjectsOfType<MultisceneLoader>();
 
-    #region Runtime Code
-    void LoadScenesInPlayMode() {
-        foreach (var scene in scenes) {
-            if (!IsSceneAssetLoaded(scene))
-                SceneManager.LoadSceneAsync(scene.name, LoadSceneMode.Additive);
+        List<Scene> GetAllLoadedScenes() {
+            List<Scene> scenes = new List<Scene>();
+            for (int i = 0; i < SceneManager.sceneCount; ++i)
+                scenes.Add(SceneManager.GetSceneAt(i));
+            return scenes;
         }
-    }
 
-    bool IsSceneAssetLoaded(SceneAsset sceneAsset) {
-        for (int i = 0; i < SceneManager.sceneCount; ++i) {
-            if (SceneManager.GetSceneAt(i).path == AssetDatabase.GetAssetPath(sceneAsset))
-                return true;
+        bool ShouldRemoveScene(Scene scene, MultisceneLoader[] loaders) {
+            foreach (var loader in loaders) {
+                if (IsLoaderInThisScene(loader, scene) || IsSceneInLoaderSceneAssetList(scene, loader))
+                    return false;
+            }
+            return true;
         }
-        return false;
+
+        bool IsLoaderInThisScene(MultisceneLoader loader, Scene scene) => loader.gameObject.scene.path == scene.path;
+
+        bool IsSceneInLoaderSceneAssetList(Scene scene, MultisceneLoader loader) {
+            foreach (var sceneAsset in loader.scenes) {
+                if (AssetDatabase.GetAssetPath(sceneAsset) == scene.path)
+                    return true;
+            }
+            return false;
+        }
+
+        void OpenAllScenes() {
+            foreach (var scene in scenes) {
+                if (scene)
+                    EditorSceneManager.OpenScene(AssetDatabase.GetAssetPath(scene), OpenSceneMode.Additive);
+            }
+        }
+        #endregion
+
+        #region Runtime Code
+        void LoadScenesInPlayMode() {
+            foreach (var scene in scenes) {
+                if (!IsSceneAssetLoaded(scene))
+                    SceneManager.LoadSceneAsync(scene.name, LoadSceneMode.Additive);
+            }
+        }
+
+        bool IsSceneAssetLoaded(SceneAsset sceneAsset) {
+            for (int i = 0; i < SceneManager.sceneCount; ++i) {
+                if (SceneManager.GetSceneAt(i).path == AssetDatabase.GetAssetPath(sceneAsset))
+                    return true;
+            }
+            return false;
+        }
+        #endregion
     }
-    #endregion
 }
